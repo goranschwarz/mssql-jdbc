@@ -24,8 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -71,17 +69,13 @@ class SQLServerMSAL4JUtils {
         throw new UnsupportedOperationException(SQLServerException.getErrString("R_notSupported"));
     }
 
-    private static final Lock lock = new ReentrantLock();
-
-    static SqlAuthenticationToken getSqlFedAuthToken(SqlFedAuthInfo fedAuthInfo, String user, String password,
-            String authenticationString) throws SQLServerException {
+    static synchronized SqlAuthenticationToken getSqlFedAuthToken(SqlFedAuthInfo fedAuthInfo, String user,
+            String password, String authenticationString) throws SQLServerException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest(LOGCONTEXT + authenticationString + ": get FedAuth token for user: " + user);
         }
-
-        lock.lock();
 
         try {
             final PublicClientApplication pca = PublicClientApplication
@@ -110,13 +104,12 @@ class SQLServerMSAL4JUtils {
         } catch (MalformedURLException | ExecutionException e) {
             throw getCorrectedException(e, user, authenticationString);
         } finally {
-            lock.unlock();
             executorService.shutdown();
         }
     }
 
-    static SqlAuthenticationToken getSqlFedAuthTokenPrincipal(SqlFedAuthInfo fedAuthInfo, String aadPrincipalID,
-            String aadPrincipalSecret, String authenticationString) throws SQLServerException {
+    static synchronized SqlAuthenticationToken getSqlFedAuthTokenPrincipal(SqlFedAuthInfo fedAuthInfo,
+            String aadPrincipalID, String aadPrincipalSecret, String authenticationString) throws SQLServerException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         if (logger.isLoggable(Level.FINEST)) {
@@ -128,8 +121,6 @@ class SQLServerMSAL4JUtils {
                                                                     : fedAuthInfo.spn + defaultScopeSuffix;
         Set<String> scopes = new HashSet<>();
         scopes.add(scope);
-
-        lock.lock();
 
         try {
             IClientCredential credential = ClientCredentialFactory.createFromSecret(aadPrincipalSecret);
@@ -157,12 +148,11 @@ class SQLServerMSAL4JUtils {
         } catch (MalformedURLException | ExecutionException e) {
             throw getCorrectedException(e, aadPrincipalID, authenticationString);
         } finally {
-            lock.unlock();
             executorService.shutdown();
         }
     }
 
-    static SqlAuthenticationToken getSqlFedAuthTokenPrincipalCertificate(SqlFedAuthInfo fedAuthInfo,
+    static synchronized SqlAuthenticationToken getSqlFedAuthTokenPrincipalCertificate(SqlFedAuthInfo fedAuthInfo,
             String aadPrincipalID, String certFile, String certPassword, String certKey, String certKeyPassword,
             String authenticationString) throws SQLServerException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -177,8 +167,6 @@ class SQLServerMSAL4JUtils {
                                                                     : fedAuthInfo.spn + defaultScopeSuffix;
         Set<String> scopes = new HashSet<>();
         scopes.add(scope);
-
-        lock.lock();
 
         try {
             ConfidentialClientApplication clientApplication = null;
@@ -261,12 +249,11 @@ class SQLServerMSAL4JUtils {
             throw getCorrectedException(e, aadPrincipalID, authenticationString);
 
         } finally {
-            lock.unlock();
             executorService.shutdown();
         }
     }
 
-    static SqlAuthenticationToken getSqlFedAuthTokenIntegrated(SqlFedAuthInfo fedAuthInfo,
+    static synchronized SqlAuthenticationToken getSqlFedAuthTokenIntegrated(SqlFedAuthInfo fedAuthInfo,
             String authenticationString) throws SQLServerException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -281,8 +268,6 @@ class SQLServerMSAL4JUtils {
             logger.finest(LOGCONTEXT + authenticationString + ": get FedAuth token integrated, user: " + user
                     + "realm name:" + kerberosPrincipal.getRealm());
         }
-
-        lock.lock();
 
         try {
             final PublicClientApplication pca = PublicClientApplication
@@ -311,20 +296,17 @@ class SQLServerMSAL4JUtils {
         } catch (IOException | ExecutionException e) {
             throw getCorrectedException(e, user, authenticationString);
         } finally {
-            lock.unlock();
             executorService.shutdown();
         }
     }
 
-    static SqlAuthenticationToken getSqlFedAuthTokenInteractive(SqlFedAuthInfo fedAuthInfo, String user,
+    static synchronized SqlAuthenticationToken getSqlFedAuthTokenInteractive(SqlFedAuthInfo fedAuthInfo, String user,
             String authenticationString) throws SQLServerException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest(LOGCONTEXT + authenticationString + ": get FedAuth token interactive for user: " + user);
         }
-
-        lock.lock();
 
         try {
             PublicClientApplication pca = PublicClientApplication
@@ -402,7 +384,6 @@ class SQLServerMSAL4JUtils {
         } catch (MalformedURLException | URISyntaxException | ExecutionException e) {
             throw getCorrectedException(e, user, authenticationString);
         } finally {
-            lock.unlock();
             executorService.shutdown();
         }
     }
