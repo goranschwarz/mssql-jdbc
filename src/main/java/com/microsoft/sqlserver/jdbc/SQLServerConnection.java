@@ -1877,7 +1877,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
                     if (0 == connectRetryCount) {
                         // connection retry disabled
                         throw e;
-                    } else if (connectRetryAttempt++ > connectRetryCount) {
+                    } else if (++connectRetryAttempt > connectRetryCount) {
                         // maximum connection retry count reached
                         if (connectionlogger.isLoggable(Level.FINE)) {
                             connectionlogger.fine("Connection failed. Maximum connection retry count "
